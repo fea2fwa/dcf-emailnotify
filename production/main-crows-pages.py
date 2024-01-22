@@ -30,6 +30,8 @@ def fetch_contentdata_from_url(url):
     if response.status_code != 200:
         print(f"Failed to fetch {url}")
         return
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
 
     # bs4でタイトルを取得(情報取得はしておくが他の所から同じ情報を取ってきているのでreturnでは返さない)
     title = soup.find('h1', class_='conversation-balloon__content__title word-wrap heading heading--h1 css-1ry1tx8 css-1pj99nl').get_text(strip=True)
@@ -41,10 +43,10 @@ def fetch_contentdata_from_url(url):
     meta_tag = soup.find('meta', attrs={'data-react-helmet': 'true', 'name': 'description'})
     question_text = meta_tag['content']
 
-    # bs4とdatetimeで投稿時間（日本時間）を取得
+    # bs4とdatetimeで投稿時間（日本時間はtimedeltaを利用）を取得
     date_text = soup.find('p', class_='m-r-1 dell-conversation-ballon__header-date text text--normal css-1ry1tx8 css-jp8xm2').get_text(strip=True)
-    original_time = datetime.datetime.strptime(date_text, "%Y年%m月%d日 %H:%M")
-    new_time = original_time + datetime.timedelta(hours=9)
+    original_time = datetime.strptime(date_text, "%Y年%m月%d日 %H:%M")
+    new_time = original_time + timedelta(hours=9)
     post_time = new_time.strftime('%Y-%m-%d %H:%M')
 
     return (author, post_time, question_text)
