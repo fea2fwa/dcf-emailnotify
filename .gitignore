@@ -1,0 +1,5 @@
+production/.env
+simple-production/.env
+test/.env
+*.env
+
