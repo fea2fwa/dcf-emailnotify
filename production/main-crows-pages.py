@@ -111,18 +111,18 @@ def check_for_updates(url, check_interval=300):
             print("新規コンテンツ情報：", added)
 
             body = []
+            title = ""
             for i, v in added.items():
                 # urlの中に日本語のキャラクターがあると上手く動作しないのでUTF-8でエンコード
                 url_utf8 = urllib.parse.quote(v, encoding="utf-8")
                 v2 = f"https://www.dell.com{url_utf8}"
+                title = i
                 print(f"確認URLは： {v2}")
                 try:
                     author, post_time, question_text = fetch_contentdata_from_url(v2)                    
-                    body.append(f"タイトル：{i}\nURL: {v2}\n質問者: {author}\n投稿時間: {post_time}\n質問内容:\n{question_text}\n\n\n")
+                    body.append(f"タイトル：{i}\n\nURL: {v2}\n\n質問者: {author}\n\n投稿時間: {post_time}\n\n質問内容:\n{question_text}\n\n\n")
                 except Exception as e:
                     print(f"コンテンツ詳細情報取得に失敗しました：{e}")  
-            # for i, v in added.items():
-            #     body.append(f'タイトル：{i}, URL: "https://www.dell.com/{v}"')
 
             # 環境変数からメールアドレスとパスワードを取得する
             load_dotenv()  # .envファイルから環境変数を読み込む
@@ -133,13 +133,25 @@ def check_for_updates(url, check_interval=300):
             try:
                 recipient_emails = os.environ.get("RECIPIENT_EMAILS")
                 recipient_emails = list(recipient_emails.split(","))
-                send_notification_email(
-                  sender_email, sender_password, recipient_emails, "Dellコミュニティに新規コンテンツが投稿されました", body
-                )
+                # 変更確認対象URLページが「解決済み」マークの付与でも変更されてしまうので、新規書き込み時とのタイトル場合分け
+
+                # if body == []:   #このブロックは旧バージョン。解決済みマークがついた時に空メールを送る仕様。
+                #     email_title = "Dellコミュニティ_誰かが「解決済み」マークを付けたようです（確認の必要はありません）"
+                # else:
+                #     email_title = "Dellコミュニティに新規コンテンツが投稿されました"
+
+                content_no = len(added)
+
+                email_title = f"{content_no}:Dellコミュニティに新規コンテンツが投稿されました-{title}"
+
+                if body != []:         
+                    send_notification_email(
+                    sender_email, sender_password, recipient_emails, email_title, body
+                    )
             except Exception as e:
                 print(f"メール送信に失敗しました：{e}")
 
-            print(f"出力確認ポイント4：email送信処理に投げたことを確認")
+            print(f"出力確認ポイント4：email送信処理完了（注：空メールは送信しません）")
 
             # 最新のコンテンツを今後の比較対象とする
             last_texts = current_texts
