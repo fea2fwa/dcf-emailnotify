@@ -4,7 +4,6 @@ import time
 import os
 from dotenv import load_dotenv
 import smtplib
-from email.mime.text import MIMEText
 import json
 from datetime import datetime, timedelta
 import urllib.parse
@@ -83,17 +82,9 @@ def send_notification_email(sender_email, sender_password, recipient_emails, sub
 
     print(f"出力確認ポイント2：email送信開始")
 
-    
-    # MIME形式に変換
-    message = MIMEText(message, 'plain')
-    message['Subject'] = subject
-    message['From'] = new_sender_email
-
     # メール送信部分　.encode('utf-8')は'ascii' codec can't encode characters in position 13-34: ordinal not in range(128)エラー対策
     for recipient_email in recipient_emails:
-        # server.sendmail(new_sender_email, recipient_email, message.encode('utf-8'))
-        message['To'] = recipient_email
-        server.sendmail(new_sender_email, recipient_email, message.as_string())
+        server.sendmail(new_sender_email, recipient_email, message.encode('utf-8'))
 
     print(f"出力確認ポイント3：email送信完了")
 
@@ -116,9 +107,6 @@ def check_for_updates(url, check_interval=300):
 
         if current_texts != last_texts:
             print(f"Update detected on {url}!")
-            # print(f"Current_texts is {current_texts}")
-            # print("\n")
-            # print(f"Last_texts is {last_texts}")
             added = {k: v for k, v in current_texts.items() if k not in last_texts}
             print("新規コンテンツ情報：", added)
 
