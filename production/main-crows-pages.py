@@ -62,6 +62,22 @@ def convert_datetime_format(dt_str):
     
     # 新しい形式に変換
     return dt_jst.strftime("%Y/%-m/%-d %-H:%M")
+
+# 過去のスレッドにアクションがあった場合に新しい書き込みと認識されることを避けるために、現在時刻とスレッドのInitial書き込み時刻の差異を確認するための関数
+def calculate_time_difference(datetime_str):
+    # テキストデータから日時をdatetimeオブジェクトに変換
+    given_datetime = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M')
+    
+    # 現在の時刻を取得
+    current_datetime = datetime.now()
+    
+    # 差異を計算
+    time_difference = current_datetime - given_datetime
+
+    # 差異を秒数に変換
+    time_difference_seconds = time_difference.total_seconds()
+    
+    return time_difference_seconds
     
 
 def send_notification_email(sender_email, sender_password, recipient_emails, subject, body):
@@ -132,8 +148,12 @@ def check_for_updates(url, check_interval=300):
                 title = i
                 print(f"確認URLは： {v2}")
                 try:
-                    author, post_time, question_text = fetch_contentdata_from_url(v2)                    
-                    body.append(f"タイトル：{i}\n\nURL: {v2}\n\n質問者: {author}\n\n投稿時間: {post_time}\n\n質問内容:\n{question_text}\n\n\n")
+                    author, post_time, question_text = fetch_contentdata_from_url(v2)
+                    # 新規書き込みか、過去の書き込みへのアクションなのかを確認するために現在時刻との時間差異を確認
+                    post_time_difference = calculate_time_difference(post_time)
+                    # もしも時間差異が10分以内であればメール送信のためのbodyを作成
+                    if post_time_difference < 600:
+                        body.append(f"タイトル：{i}\n\nURL: {v2}\n\n質問者: {author}\n\n投稿時間: {post_time}\n\n質問内容:\n{question_text}\n\n\n")
                 except Exception as e:
                     print(f"コンテンツ詳細情報取得に失敗しました：{e}")  
 
