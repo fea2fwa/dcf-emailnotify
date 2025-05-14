@@ -34,9 +34,6 @@ def fetch_contentdata_from_url(url):
     
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # bs4で書き込みスペース名を取得(情報取得はしておくが他の所から同じ情報を取ってきているのでreturnでは返さない)
-    space_name = soup.find('h2', class_='modern-banner__title').get_text(strip=True)
-
     # bs4でタイトルを取得(情報取得はしておくが他の所から同じ情報を取ってきているのでreturnでは返さない)
     title = soup.find('h1', class_='conversation-balloon__content__title word-wrap heading heading--h1 css-1ry1tx8 css-1pj99nl').get_text(strip=True)
 
@@ -53,7 +50,7 @@ def fetch_contentdata_from_url(url):
     new_time = original_time + timedelta(hours=9)
     post_time = new_time.strftime('%Y-%m-%d %H:%M')
 
-    return (space_name, author, post_time, question_text)
+    return (author, post_time, question_text)
 
 # 以下関数は以前利用していたが、現行では利用しないようにした
 def convert_datetime_format(dt_str):
@@ -146,22 +143,17 @@ def check_for_updates(url, check_interval=300):
             title = ""
             for i, v in added.items():
                 # urlの中に日本語のキャラクターがあると上手く動作しないのでUTF-8でエンコード
-                # url_utf8 = urllib.parse.quote(v, encoding="utf-8")
-
-                # UTF-8でエンコードするとダブルバイトがURLに入ってきてリンクがうまく動かなくなったのでURLエンコードに変更
-                url_enc = urllib.parse.quote(v, safe='/:?=&')
-
-                # v2 = f"https://www.dell.com{url_utf8}"
-                v2 = f"https://www.dell.com{url_enc}"
+                url_utf8 = urllib.parse.quote(v, encoding="utf-8")
+                v2 = f"https://www.dell.com{url_utf8}"
                 title = i
                 print(f"確認URLは： {v2}")
                 try:
-                    space_name, author, post_time, question_text = fetch_contentdata_from_url(v2)
+                    author, post_time, question_text = fetch_contentdata_from_url(v2)
                     # 新規書き込みか、過去の書き込みへのアクションなのかを確認するために現在時刻との時間差異を確認
                     post_time_difference = calculate_time_difference(post_time)
                     # もしも時間差異が10分以内であればメール送信のためのbodyを作成
                     if post_time_difference < 600:
-                        body.append(f"タイトル：{i}\n\nスペース：{space_name}\n\nURL: {v2}\n\n質問者: {author}\n\n投稿時間: {post_time}\n\n質問内容:\n{question_text}\n\n\n")
+                        body.append(f"タイトル：{i}\n\nURL: {v2}\n\n質問者: {author}\n\n投稿時間: {post_time}\n\n質問内容:\n{question_text}\n\n\n")
                 except Exception as e:
                     print(f"コンテンツ詳細情報取得に失敗しました：{e}")  
 
